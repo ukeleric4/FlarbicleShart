@@ -23,14 +23,8 @@ public class Vision {
     VisionPortal portal;
     ColorBlobLocatorProcessor.Blob block;
     RotatedRect boxFit;
-
     double angle1 = 0;
     double angle2 = 0;
-
-    int centerX = 160;
-    int centerY = 120;
-
-    double multipler = 0.025;
 
     Telemetry telemetry;
 
@@ -62,19 +56,24 @@ public class Vision {
                 .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
                 .build();
         areaFilter = new ColorBlobLocatorProcessor.BlobFilter(ColorBlobLocatorProcessor.BlobCriteria.BY_CONTOUR_AREA,50, 20000);
+
+        this.telemetry = telemetry;
     }
 
     public void updateVision() {
         blobs = colorLocatorBlue.getBlobs();
         if (!blobs.isEmpty()) {
             block = blobs.get(0);
-
             boxFit = block.getBoxFit();
             angle1 = boxFit.angle;
             if (boxFit.size.width < boxFit.size.height) {
                 angle2 = angle1 - 90;
             }
+            telemetry.addData("angle1:", angle1);
+            telemetry.addData("angle2:", angle2);
         }
+
+        telemetry.update();
     }
 
     public ColorBlobLocatorProcessor.Blob getFirstBlock() {
@@ -87,45 +86,6 @@ public class Vision {
             return null;
         }
         return null;
-    }
-
-    public double getXMovement() {
-        ColorBlobLocatorProcessor.Blob blob = getFirstBlock();
-        if (blob != null) {
-            double x = blob.getBoxFit().center.x;
-            if (x < centerX) {
-                return -(multipler * (centerX - x));
-            } else {
-                return multipler * (x - centerX);
-            }
-        }
-        return 0.01;
-    }
-
-    public double getYMovement() {
-        ColorBlobLocatorProcessor.Blob blob = getFirstBlock();
-        if (blob != null) {
-            double y = blob.getBoxFit().center.y;
-            if (y < centerY) {
-                return multipler * (centerY - y);
-            } else {
-                return -(multipler * (y - centerY));
-            }
-        }
-        return 0.01;
-    }
-
-    public double getYPixels() {
-        ColorBlobLocatorProcessor.Blob blob = getFirstBlock();
-        if (blob != null) {
-            double y = blob.getBoxFit().center.y;
-            if (y < centerY) {
-                return (centerY - y);
-            } else {
-                return -(y - centerY);
-            }
-        }
-        return 0.01;
     }
 
     public double getOrientation() {

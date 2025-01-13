@@ -23,7 +23,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.util.Timer;
 @Autonomous(name = "SUBMERSIBLE", group = "Game Auto")
 public class Submersible extends OpMode {
     // Parts
-    public PIDFPanning panning;
+    public Panning panning;
     public Claw claw;
     public Servos orientation;
     public Servos pitching;
@@ -62,91 +62,7 @@ public class Submersible extends OpMode {
     private PathChain hangFirst, grabFirst, dropOffFirst, grabSecond,
             dropOffSecond, grabThird, grabSpecSecond, hangSpecSecond,
             grabSpecThird, hangSpecThird, grabSpecFourth, hangSpecFourth,
-            grabSpecFifth, hangSpecFifth, endPark, fullPath;
-
-
-    /** This switch is called continuously and runs the pathing, at certain points, it triggers the action state.
-     * Everytime the switch changes case, it will reset the timer. (This is because of the setPathState() method)
-     * The followPath() function sets the follower to run the specific path, but does NOT wait for it to finish before moving on. */
-    public void autonomousPathUpdate() {
-        switch (pathState) {
-            case 0:
-                follower.followPath(hangFirst);
-                panning.setTargetPos(600);
-                movePanServoScore();
-                setPathState(1);
-            case 1:
-
-        }
-    }
-
-    /** These change the states of the paths and actions
-     * It will also reset the timers of the individual switches **/
-    public void setPathState(int pState) {
-        pathState = pState;
-        pathTimer.resetTimer();
-    }
-
-    /** This is the main loop of the OpMode, it will run repeatedly after clicking "Play". **/
-    @Override
-    public void loop() {
-        // These loop the movements of the robot
-        follower.update();
-        autonomousPathUpdate();
-
-        // Feedback to Driver Hub
-        telemetry.addData("path state", pathState);
-        telemetry.addData("x", follower.getPose().getX());
-        telemetry.addData("y", follower.getPose().getY());
-        telemetry.addData("heading", follower.getPose().getHeading());
-        telemetry.update();
-    }
-
-    // Runs when "init" is pressed
-    @Override
-    public void init() {
-        // Get things from hardware map
-        slides = new PIDFSlide(hardwareMap);
-        panning = new PIDFPanning(hardwareMap);
-        claw = new Claw(hardwareMap);
-        pitching = new Servos(hardwareMap, "pitching");
-        orientation = new Servos(hardwareMap, "orientation");
-        panningServo = new Servos(hardwareMap, "panning");
-
-        // Make timers
-        pathTimer = new Timer();
-        opmodeTimer = new Timer();
-        opmodeTimer.resetTimer();
-
-        // Set up follower
-        follower = new Follower(hardwareMap);
-        follower.setStartingPose(startPose);
-        buildPaths();
-
-        // Place parts in initial positions
-        claw.closeClaw(); // Closed claw
-        panningServo.moveToMin(); // Panning servo UP
-        pitching.moveToMin(); // Pitching UP
-        orientation.moveToMin(); // Orientation at normal pos
-        slides.setTargetPos(20); // Slides fully retracted
-    }
-
-    // Runs when "start" is pressed
-    @Override
-    public void start() {
-        opmodeTimer.resetTimer();
-        setPathState(0);
-    }
-
-    // Stop method to stop the opMode
-    @Override
-    public void stop() {}
-
-    // Helper functions
-
-    public void movePanServoScore() { panningServo.moveSpecificPos(0.2); }
-    public void movePanServoGrab() { panningServo.moveSpecificPos(0.35); }
-    public void movePanServoReady() {panningServo.moveSpecificPos(0.2);}
+            grabSpecFifth, hangSpecFifth, endPark, pathTest;
 
     // Builds all paths prior to running the auto (init)
     public void buildPaths() {
@@ -211,7 +127,7 @@ public class Submersible extends OpMode {
                 .setLinearHeadingInterpolation(hangPose5.getHeading(), park.getHeading())
                 .build();
 
-        fullPath = follower.pathBuilder()
+        pathTest = follower.pathBuilder()
                 .addPath(
                         // Line 1
                         new BezierLine(
@@ -343,4 +259,268 @@ public class Submersible extends OpMode {
                 .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(60)).build();
 
     }
+
+    /** This switch is called continuously and runs the pathing, at certain points, it triggers the action state.
+     * Everytime the switch changes case, it will reset the timer. (This is because of the setPathState() method)
+     * The followPath() function sets the follower to run the specific path, but does NOT wait for it to finish before moving on. */
+    public void autonomousPathUpdate() throws InterruptedException {
+        switch (pathState) {
+            case 0:
+                // Hang the first block
+                panning.runUp();
+                while (pathTimer.getElapsedTime() < 1600) {}
+                panning.stop();
+                follower.followPath(hangFirst);
+                movePanServoScore();
+                setPathState(1);
+                break;
+            case 1:
+                // Follow the path to the first block
+                if (follower.getPose().getX() > (hangPose1.getX() - 1) && follower.getPose().getY() > (hangPose1.getY() - 1)) {
+                    panningServo.moveToMin();
+                    sleep(1000);
+                }
+                break;
+                /*
+            case 2:
+                // Once you reach the block, grab it
+                if (follower.getPose().getX() > (pickUpPose1.getX() - 1) && follower.getPose().getY() > (pickUpPose1.getY() - 1)) {
+                    do {
+                        detectedBlock = clawLens.getFirstObject();
+                    } while (detectedBlock != null && detectedBlock.width < 20 && detectedBlock.height < 20);
+                    orientation.moveSpecificPos(clawLens.calculateServoPosition(detectedBlock.height, detectedBlock.width));
+                    panningServo.moveToMin();
+                    claw.closeClaw();
+                    follower.followPath(dropOffFirst);
+                    setPathState(3);
+                }
+                break;
+            case 3:
+                // Drop off the first block in area
+                if (follower.getPose().getX() > (dropOffPose1.getX() - 1) && follower.getPose().getY() > (dropOffPose1.getY() - 1)) {
+                    follower.followPath(grabSecond);
+                    claw.openClaw();
+                    movePanServoReady();
+                    setPathState(4);
+                }
+                break;
+            case 4:
+                // Pick up second block
+                if (follower.getPose().getX() > (pickUpPose2.getX() - 1) && follower.getPose().getY() > (pickUpPose2.getY() - 1)) {
+                    do {
+                        detectedBlock = clawLens.getFirstObject();
+                    } while (detectedBlock != null && detectedBlock.width < 20 && detectedBlock.height < 20);
+                    orientation.moveSpecificPos(clawLens.calculateServoPosition(detectedBlock.height, detectedBlock.width));
+                    panningServo.moveToMin();
+                    claw.closeClaw();
+                    follower.followPath(dropOffSecond);
+                    setPathState(5);
+                }
+                break;
+            case 5:
+                // Drop off second block
+                if (follower.getPose().getX() > (dropOffPose2.getX() - 1) && follower.getPose().getY() > (dropOffPose2.getY() - 1)) {
+                    follower.followPath(grabThird);
+                    claw.openClaw();
+                    movePanServoReady();
+                    setPathState(6);
+                }
+                break;
+            case 6:
+                // Pick up third block
+                if (follower.getPose().getX() > (pickUpPose3.getX() - 1) && follower.getPose().getY() > (pickUpPose3.getY() - 1)) {
+                    do {
+                        detectedBlock = clawLens.getFirstObject();
+                    } while (detectedBlock != null && detectedBlock.width < 20 && detectedBlock.height < 20);
+                    orientation.moveSpecificPos(clawLens.calculateServoPosition(detectedBlock.height, detectedBlock.width));
+                    panningServo.moveToMin();
+                    claw.closeClaw();
+                    follower.followPath(grabSpecSecond);
+                    setPathState(7);
+                }
+                break;
+            case 7:
+                if (pathTimer.getElapsedTime() > 500) {
+                    claw.openClaw();
+                    movePanServoGrab();
+                    setPathState(8);
+                }
+                break;
+            case 8:
+                if (follower.getPose().getX() > (grab1.getX() - 1) && follower.getPose().getY() > (grab1.getY() - 1)) {
+                    slides.runSlidesForward(300);
+                    claw.closeClaw();
+                    follower.followPath(hangSpecSecond);
+                    movePanServoScore();
+                    slides.runSlidesAsync(0);
+                    setPathState(9);
+                }
+                break;
+            case 9:
+                if (pathTimer.getElapsedTime() > 1) {
+                    movePanningUp(300);
+                    setPathState(10);
+                }
+                break;
+            case 10:
+                if (follower.getPose().getX() > (hangPose2.getX() - 1) && follower.getPose().getY() > (hangPose2.getY() - 1)) {
+                    claw.openClaw();
+                    follower.followPath(grabSpecThird);
+                    movePanningDown(300);
+                    movePanServoReady();
+                    slides.runSlidesAsync(1000);
+                    setPathState(11);
+                }
+                break;
+            case 11:
+                if (follower.getPose().getX() > (grab.getX() - 1) && follower.getPose().getY() > (grab.getY() - 1)) {
+                    slides.runSlidesForward(300);
+                    claw.closeClaw();
+                    follower.followPath(hangSpecThird);
+                    movePanServoScore();
+                    slides.runSlidesAsync(0);
+                    setPathState(12);
+                }
+                break;
+            case 12:
+                if (pathTimer.getElapsedTime() > 1) {
+                    movePanningUp(300);
+                    setPathState(13);
+                }
+                break;
+            case 13:
+                if (follower.getPose().getX() > (hangPose3.getX() - 1) && follower.getPose().getY() > (hangPose3.getY() - 1)) {
+                    claw.openClaw();
+                    follower.followPath(grabSpecFourth);
+                    movePanningDown(300);
+                    movePanServoReady();
+                    slides.runSlidesAsync(1000);
+                    setPathState(14);
+                }
+                break;
+            case 14:
+                if (follower.getPose().getX() > (grab.getX() - 1) && follower.getPose().getY() > (grab.getY() - 1)) {
+                    slides.runSlidesForward(300);
+                    claw.closeClaw();
+                    follower.followPath(hangSpecFourth);
+                    movePanServoScore();
+                    slides.runSlidesAsync(0);
+                    setPathState(15);
+                }
+                break;
+            case 15:
+                if (pathTimer.getElapsedTime() > 1) {
+                    movePanningUp(300);
+                    setPathState(16);
+                }
+                break;
+            case 16:
+                if (follower.getPose().getX() > (hangPose4.getX() - 1) && follower.getPose().getY() > (hangPose4.getY() - 1)) {
+                    claw.openClaw();
+                    follower.followPath(grabSpecFifth);
+                    movePanningDown(300);
+                    movePanServoReady();
+                    slides.runSlidesAsync(1000);
+                    setPathState(17);
+                }
+                break;
+            case 17:
+                if (follower.getPose().getX() > (grab.getX() - 1) && follower.getPose().getY() > (grab.getY() - 1)) {
+                    slides.runSlidesForward(300);
+                    claw.closeClaw();
+                    follower.followPath(hangSpecFifth);
+                    movePanServoScore();
+                    slides.runSlidesAsync(0);
+                    setPathState(18);
+                }
+                break;
+            case 18:
+                if (pathTimer.getElapsedTime() > 1) {
+                    movePanningUp(300);
+                    setPathState(19);
+                }
+                break;
+            case 19:
+                if (follower.getPose().getX() > (hangPose5.getX() - 1) && follower.getPose().getY() > (hangPose5.getY() - 1)) {
+                    claw.openClaw();
+                    follower.followPath(endPark);
+                    movePanningDown(300);
+                    slides.runSlidesAsync(1000);
+                    setPathState(-1);
+                }
+                break;*/
+        }
+    }
+
+    /** These change the states of the paths and actions
+     * It will also reset the timers of the individual switches **/
+    public void setPathState(int pState) {
+        pathState = pState;
+        pathTimer.resetTimer();
+    }
+
+    /** This is the main loop of the OpMode, it will run repeatedly after clicking "Play". **/
+    @Override
+    public void loop() {
+        // These loop the movements of the robot
+        follower.update();
+        try {
+            autonomousPathUpdate();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Feedback to Driver Hub
+        telemetry.addData("path state", pathState);
+        telemetry.addData("x", follower.getPose().getX());
+        telemetry.addData("y", follower.getPose().getY());
+        telemetry.addData("heading", follower.getPose().getHeading());
+        telemetry.update();
+    }
+
+    // Runs when "init" is pressed
+    @Override
+    public void init() {
+        // Get things from hardware map
+        slides = new PIDFSlide(hardwareMap);
+        panning = new Panning(hardwareMap);
+        claw = new Claw(hardwareMap);
+        pitching = new Servos(hardwareMap, "pitching");
+        orientation = new Servos(hardwareMap, "orientation");
+        panningServo = new Servos(hardwareMap, "panning");
+
+        // Make timers
+        pathTimer = new Timer();
+        opmodeTimer = new Timer();
+        opmodeTimer.resetTimer();
+
+        // Set up follower
+        follower = new Follower(hardwareMap);
+        follower.setStartingPose(startPose);
+        buildPaths();
+
+        // Place parts in initial positions
+        claw.closeClaw();
+        panningServo.moveToMin();
+        pitching.moveToMin();
+        orientation.moveToMin();
+        slides.setTargetPos(20);
+    }
+
+    // Runs when "start" is pressed
+    @Override
+    public void start() {
+        opmodeTimer.resetTimer();
+        setPathState(0);
+    }
+
+    // Stop method to stop the opMode
+    @Override
+    public void stop() {}
+
+    // Helper functions
+
+    public void movePanServoScore() { panningServo.moveSpecificPos(0.2); }
+    public void movePanServoGrab() { panningServo.moveSpecificPos(0.35); }
+    public void movePanServoReady() {panningServo.moveSpecificPos(0.2);}
 }

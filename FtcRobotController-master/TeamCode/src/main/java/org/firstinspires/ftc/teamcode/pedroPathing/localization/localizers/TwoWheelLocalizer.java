@@ -81,14 +81,14 @@ public class TwoWheelLocalizer extends Localizer { // todo: make two wheel odo w
      */
     public TwoWheelLocalizer(HardwareMap map, Pose setStartPose) {
         // TODO: replace these with your encoder positions
-        forwardEncoderPose = new Pose(2, -2, 0);
-        strafeEncoderPose = new Pose(6, 1.5, Math.toRadians(90));
+        forwardEncoderPose = new Pose(6, 0, 0);
+        strafeEncoderPose = new Pose(1.5, -6, Math.toRadians(90));
 
         hardwareMap = map;
 
         imu = hardwareMap.get(IMU.class, "imu");
         // TODO: replace this with your IMU's orientation
-        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.LEFT, RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD)));
+        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.UP, RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD)));
 
         // TODO: replace these with your encoder ports
         forwardEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "bl"));

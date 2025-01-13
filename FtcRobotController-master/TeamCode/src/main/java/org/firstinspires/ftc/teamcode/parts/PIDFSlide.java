@@ -26,12 +26,12 @@ public class PIDFSlide {
     }
 
     public void updateSlide() {
-        controller.setPID(p, i, d);
-        int motorPos = motor2.getCurrentPosition();
-        double pid = controller.calculate(motorPos, target);
-        double ff = Math.cos(Math.toRadians(target / ticks_in_degree)) * f;
+            controller.setPID(p, i, d);
+            int motorPos = motor2.getCurrentPosition();
+            double pid = controller.calculate(motorPos, target);
+            double ff = Math.cos(Math.toRadians(target / ticks_in_degree)) * f;
 
-        power = pid + ff;
+            power = pid + ff;
     }
 
     public void updatePower() {

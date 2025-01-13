@@ -87,6 +87,18 @@ public class PedroDriver extends LinearOpMode {
             // Update pedro pathing follower, cv, panning, slide
             update();
 
+//           manualPanServo();
+//            clawMovement();
+//            cvOrientation();
+//            autoSlide();
+//            manualOrientation();
+//            slidePosition();
+//            manualPanning();
+//            bucketCaseChange();
+//            updateFollower();
+
+//             runToBucket(bucketCase);
+
             oldGamepad1 = gamepad1;
             oldGamepad2 = gamepad2;
         }
@@ -183,6 +195,8 @@ public class PedroDriver extends LinearOpMode {
            movePanningUp();
         } else if (gamepad2.left_trigger > 0.8) {
             movePanningDown();
+        } else {
+            keepPanning();
         }
     }
 
@@ -227,10 +241,15 @@ public class PedroDriver extends LinearOpMode {
 
     // Other functions
     public void movePanningDown() {
-        panningMotor.setTargetPos(20);
+        panningMotor.setPower(-1);
     }
     public void movePanningUp() {
-        panningMotor.setTargetPos(600);
+        panningMotor.setPower(1);
+    }
+
+    public void keepPanning() {
+        panningMotor.setPower(0);
+        panningMotor.setModeBrake();
     }
 
     public void bucketDrop() {

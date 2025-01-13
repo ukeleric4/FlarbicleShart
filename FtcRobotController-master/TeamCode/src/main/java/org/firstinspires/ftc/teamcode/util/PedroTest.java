@@ -27,7 +27,6 @@ public class PedroTest extends LinearOpMode {
         bucketPose = new Pose(83, 47.6, 135);
 
         while (opModeIsActive()) {
-            follower.breakFollowing();
             if (gamepad1.a && !oldGamepad1.a) {
                 goToBucket();
                 sleep(200);

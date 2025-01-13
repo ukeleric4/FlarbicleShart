@@ -6,7 +6,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.parts.Vision;
 import org.firstinspires.ftc.teamcode.parts.Servos;
-import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
 
 @Disabled
 @TeleOp
@@ -21,7 +20,6 @@ public class VisionTest extends LinearOpMode {
         waitForStart();
         vision = new Vision(hardwareMap, telemetry);
         orientation = new Servos(hardwareMap, "orientation");
-
 
         while (opModeIsActive()) {
             if (gamepad1.x) {

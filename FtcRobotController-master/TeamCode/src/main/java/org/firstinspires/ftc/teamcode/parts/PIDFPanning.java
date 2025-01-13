@@ -22,6 +22,8 @@ public class PIDFPanning {
         controller = new PIDController(p, i, d);
 
         motor1 = hardwareMap.get(DcMotorEx.class, "panningmotor");
+
+        motor1.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
     }
 
     public void updatePanning() {
@@ -33,8 +35,34 @@ public class PIDFPanning {
         power = pid + ff;
     }
 
+    public void updatePower() {
+        motor1.setPower(-power);
+    }
+
+    public void setPower(double power) {
+        motor1.setPower(-power);
+    }
+
+    public void setModeBrake() {
+        motor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    }
+
     public void setTargetPos(int targetPos) {
         target = targetPos;
+    }
+
+    public int getTargetPos() {
+        return target;
+    }
+
+    public void runForward() {
+        target += 5;
+    }
+
+    public void runBackward() {
+        if (target >= 20) {
+            target -= 5;
+        }
     }
 }
 
